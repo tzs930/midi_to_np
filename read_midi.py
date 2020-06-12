@@ -175,26 +175,42 @@ if __name__ == '__main__':
     # filepath = "/Users/seokin/Workspace/midi_to_numpy/datasets/classic/Beethoven/Overture ''Fidelio'' op72b.mid"
     dirpath = "/Users/seokin/Workspace/midi_to_numpy/datasets/classic/Beethoven"
     filepaths = []
-    output_data = {}
+    output_data = []
+    start_seq_len = 32
     max_seq_len = 64
 
+    i = 0
     for filename in os.listdir(dirpath):
         if  '.mid' in filename:
             filepath = dirpath + '/' + filename
             filepaths.append(filepath)
-        # with open(os.path.join(os.cwd(), filename), 'r') as f: 
-    
-        aaa = Read_midi(filepath, 16).read_file()
+            # with open(os.path.join(os.cwd(), filename), 'r') as f:     
+            aaa = Read_midi(filepath, 16).read_file()
 
-        # TODO 1 : (, 128) -> (, 88)
-        bbb = utils.dict_to_matrix(aaa)
-        bbb_fixed = bbb[:max_seq_len, 20:][:, :-20]
+            # TODO 1 : (, 128) -> (, 88)
+            bbb = utils.dict_to_matrix(aaa)
+            total_seq_len = len(bbb)
+            cur_seq_pos = start_seq_len
 
-        output_data[filename] = bbb_fixed.copy()
+            while cur_seq_pos < total_seq_len:
+                bbb_fixed = bbb[cur_seq_pos:, 20:][:max_seq_len, :-20]
+                
+                if len(bbb_fixed) < max_seq_len:
+                    break
+
+                if bbb_fixed.max() != 0:                
+                    # output_data[filename] = bbb_fixed.copy()
+                    output_data.append(bbb_fixed.copy())
+                    print("- %04d Load (%d,%d) from file : %s"%(i+1, bbb_fixed.shape[0], bbb_fixed.shape[1], filename))
+                    i += 1
+
+                cur_seq_pos = cur_seq_pos + max_seq_len
         
-    np.save('beethoven.npy', output_data)
-    # import pdb; pdb.set_trace()
-    # import write_midi
-    # write_midi.write_midi(aaa, 16, "test.mid", 80)
+    idxs = np.arange(len(output_data))
+    train_idxs = np.random.choice(idxs, size=int(len(output_data)*0.9), replace=False)
+    test_idxs = np.delete(idxs, train_idxs)
+
+    np.save('beethoven64_train.npy', np.array(output_data)[train_idxs])
+    np.save('beethoven64_test.npy', np.array(output_data)[test_idxs])
 
     # output : {"songname": np.matrix(max_seq_len, note)}
