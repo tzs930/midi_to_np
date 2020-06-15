@@ -4,7 +4,6 @@ import numpy as np
 
 def write_midi(pr, ticks_per_beat, write_path, tempo=80):
     def pr_to_list(pr):
-        print(pr.shape)
         # List event = (pitch, velocity, time)
         data_num, max_len, N = pr.shape
         T = data_num * max_len
